@@ -25,8 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 '''
 
-from imu import MPU6050, bytes_toint, MPUException
-from vector3d import Vector3d
+from .imu import MPU6050, bytes_toint, MPUException
+from .vector3d import Vector3d
 
 
 class MPU9250(MPU6050):
@@ -40,17 +40,30 @@ class MPU9250(MPU6050):
     '''
 
     _mag_addr = 12          # Magnetometer address
-    _chip_id = 113
+    _chip_id = 115
 
-    def __init__(self, side_str, device_addr=None, transposition=(0, 1, 2), scaling=(1, 1, 1)):
+    def __init__(self, side_str, dev_pin=(15, 4), device_addr=None, transposition=(0, 1, 2), scaling=(1, 1, 1)):
 
-        super().__init__(side_str, device_addr, transposition, scaling)
+        super().__init__(side_str, dev_pin, device_addr, transposition, scaling)
         self._mag = Vector3d(transposition, scaling, self._mag_callback)
         self.accel_filter_range = 0             # fast filtered response
         self.gyro_filter_range = 0
         self._mag_stale_count = 0               # MPU9250 count of consecutive reads where old data was returned
         self.mag_correction = self._magsetup()  # 16 bit, 100Hz update.Return correction factors.
         self._mag_callback()  # Seems neccessary to kick the mag off else 1st reading is zero (?)
+
+    def enable_irq_mode(self, level=0x22, freq=0x03):
+        self.filter_range = 1       # set accel lpf to 184Hz
+        self._write(0x40, 0x38, self.mpu_addr)     # enable motion interrupt
+        self._write(0xC0, 0x69, self.mpu_addr)     # enable accel hardware intelligence
+        self._write(level, 0x1F, self.mpu_addr)    # motion threshold: 1~255 LSBs (0~1020mg)
+        self._write(freq, 0x1E, self.mpu_addr)     # motion frequency: [3:0] = 0.24Hz ~ 500Hz
+        self._write(0x21, 0x6B, self.mpu_addr)     # enable cycle mode (Accel Low Power Mode)
+
+    def disable_irq_mode(self):
+        self._write(0x00, 0x69, self.mpu_addr)     # disable accel hardware intelligence
+        self._write(0x01, 0x6B, self.mpu_addr)     # enable sensor
+
 
     @property
     def sensors(self):

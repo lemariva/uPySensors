@@ -34,6 +34,7 @@
 # * added support for GLONASS, and GLONASS + GPS
 
 import time
+import gc
 
 class MicropyGPS(object):
     """GPS NMEA Sentence Parser. Creates object that stores all relevant GPS data and statistics.
@@ -102,10 +103,10 @@ class MicropyGPS(object):
         self.valid = False
         self.fix_stat = 0
         self.fix_type = 1
-        
+
         # UART readall
         self.oldstring = bytes()
-        
+
     ########################################
     # Logging Related Functions
     ########################################
@@ -147,7 +148,7 @@ class MicropyGPS(object):
         except TypeError:
             return False
         return True
-    
+
     ########################################
     # Sentence Parsers
     ########################################
@@ -525,18 +526,24 @@ class MicropyGPS(object):
         self.char_count = 0
 
     def updateall(self, string):
-        idx = 0        
-        string_tmp = self.oldstring + string
-        
-        for c in string_tmp:            
-            idx = idx + 1
-            stat = self.update(chr(c))                        
-            if(stat != None):                                                
-                self.oldstring = string_tmp[idx:]
-                return stat
-            
+        try:
+            idx = 0
+            string_tmp = self.oldstring + string
+
+            for c in string_tmp:
+                idx = idx + 1
+                stat = self.update(chr(c))
+                if(stat != None):
+                    self.oldstring = string_tmp[idx:]
+            return stat
+
+            gc.collect()
+        except OSError:
+            print('Error')
+
+
     def stringclean(self):
-        self.oldstring = bytes()        
+        self.oldstring = bytes()
 
     def update(self, new_char):
         """Process a new input char and updates GPS object if necessary based on special characters ('$', ',', '*')
@@ -545,7 +552,7 @@ class MicropyGPS(object):
 
         valid_sentence = False
 
-        # Validate new_char is a printable char        
+        # Validate new_char is a printable char
         ascii_char = ord(new_char)
 
         if 10 <= ascii_char <= 126:
@@ -602,8 +609,8 @@ class MicropyGPS(object):
                     self.sentence_active = False  # Clear Active Processing Flag
 
                     if self.gps_segments[0][2:] in self.supported_sentences:
-                        # parse the Sentence Based on the message type, return True if parse is clean                        
-                        if self.supported_sentences[self.gps_segments[0][2:]](self):                        
+                        # parse the Sentence Based on the message type, return True if parse is clean
+                        if self.supported_sentences[self.gps_segments[0][2:]](self):
                             # Let host know that the GPS object was updated by returning parsed sentence type
                             self.parsed_sentences += 1
                             return self.gps_segments[0]
@@ -672,7 +679,7 @@ class MicropyGPS(object):
         else:
             offset_course = self.course + 11.25
 
-        # Each compass point is separated by 22.5 degrees, divide to find lookup value        
+        # Each compass point is separated by 22.5 degrees, divide to find lookup value
         dir_index = offset_course // 22.5   #dir_index = floor(offset_course / 22.5)
 
         final_dir = self.__DIRECTIONS[dir_index]
@@ -682,8 +689,8 @@ class MicropyGPS(object):
     def latitude_string(self):
         """
         Create a readable string of the current latitude data
-        :return: string        
-        """        
+        :return: string
+        """
         lat_string = str(self.latitude[0]) + '° ' + str(self.latitude[1]) + "' " + str(self.latitude[2])
         return lat_string
 
@@ -691,7 +698,7 @@ class MicropyGPS(object):
         """
         Create a decimal value of the current latitude data
         :return: decimal
-        """        
+        """
         lat_decimal = float(self.latitude[0]) + float(self.latitude[1]) / 60
         return lat_decimal
 
@@ -708,10 +715,10 @@ class MicropyGPS(object):
         """
         Create a decimal value of the current longitude data
         :return: decimal
-        """        
+        """
         long_decimal = float(self.longitude[0]) + float(self.longitude[1]) / 60
         return long_decimal
-    
+
     def speed_string(self, unit='kph'):
         """
         Creates a readable string of the current speed data in one of three units
@@ -793,8 +800,6 @@ class MicropyGPS(object):
                 date_string = month + '/' + day + '/' + year
 
         return date_string
-    
-    # All the currently supported NMEA sentences    
+
+    # All the currently supported NMEA sentences
     supported_sentences = {'RMC': gprmc, 'GGA': gpgga, 'VTG': gpvtg, 'GSA': gpgsa, 'GSV': gpgsv, 'GLL': gpgll} # GPS + GLONASS
-    
-    

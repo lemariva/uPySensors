@@ -25,6 +25,10 @@ class Display:
         time.sleep_ms(50)
         pin_reset.value(1)
 
+    def poweroff(self, pin=16):
+        pin_reset = Pin(pin, mode=Pin.OUT)
+        pin_reset.value(0)
+
     def clear(self):
         self.display.fill(0)
         self.display.show()

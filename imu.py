@@ -39,8 +39,8 @@ THE SOFTWARE.
 # crashing. However if the I2C has crashed we're probably stuffed.
 
 from utime import sleep_ms
-from machine import I2C
-from vector3d import Vector3d
+from machine import I2C, Pin
+from .vector3d import Vector3d
 from os import uname
 
 
@@ -70,9 +70,9 @@ class MPU6050(object):
 
     _I2Cerror = "I2C failure when communicating with IMU"
     _mpu_addr = (104, 105)  # addresses of MPU9150/MPU6050. There can be two devices
-    _chip_id = 104
+    _chip_id = 104  # MPU6050
 
-    def __init__(self, side_str, device_addr=None, transposition=(0, 1, 2), scaling=(1, 1, 1)):
+    def __init__(self, side_str, dev_pin=(15, 4), device_addr=None, transposition=(0, 1, 2), scaling=(1, 1, 1)):
 
         self._accel = Vector3d(transposition, scaling, self._accel_callback)
         self._gyro = Vector3d(transposition, scaling, self._gyro_callback)
@@ -87,8 +87,11 @@ class MPU6050(object):
         #    self._mpu_i2c = I2C(side_str)
         if isinstance(side_str, str):           # Non-pyb targets may use other than X or Y
             self._mpu_i2c = I2C(side_str)
-        elif isinstance(side_str, int):         # WiPY targets
-            self._mpu_i2c = I2C(side_str)
+        elif isinstance(side_str, int):         # WiPY &ESP32 targets
+            if (side_str == -1):
+                self._mpu_i2c = I2C(side_str, scl=Pin(dev_pin[0], mode=Pin.OUT), sda=Pin(dev_pin[1], mode=Pin.IN))   # ESP32
+            else:
+                self._mpu_i2c = I2C(side_str)       # WiPy
         elif hasattr(side_str, 'readfrom'):     # Soft or hard I2C instance. See issue #3097
             self._mpu_i2c = side_str
         else:
@@ -165,7 +168,7 @@ class MPU6050(object):
             raise MPUException(self._I2Cerror)
         chip_id = int(self.buf1[0])
         if chip_id != self._chip_id:
-            raise ValueError('Bad chip ID retrieved: MPU communication failure')
+            raise ValueError('Bad chip ID ({0}!={1}) retrieved: MPU communication failure'.format(chip_id, self._chip_id))
         return chip_id
 
     @property
