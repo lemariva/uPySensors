@@ -525,7 +525,7 @@ class MicropyGPS(object):
         self.process_crc = True
         self.char_count = 0
 
-    def updateall(self, string):
+    def updateall(self, string, fastmode=False):
         try:
             idx = 0
             string_tmp = self.oldstring + string
@@ -535,6 +535,9 @@ class MicropyGPS(object):
                 stat = self.update(chr(c))
                 if(stat != None):
                     self.oldstring = string_tmp[idx:]
+                    if(fastmode):
+                        self.stringclean()
+                        return stat
             return stat
 
             gc.collect()
