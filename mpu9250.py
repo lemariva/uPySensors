@@ -40,7 +40,7 @@ class MPU9250(MPU6050):
     '''
 
     _mag_addr = 12          # Magnetometer address
-    _chip_id = 115
+    _chip_id = 113
 
     def __init__(self, side_str, dev_pin=(15, 4), device_addr=None, transposition=(0, 1, 2), scaling=(1, 1, 1)):
 
