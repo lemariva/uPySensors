@@ -13,6 +13,7 @@ MicroPython sensor libraries
 |`vl53l0x.py` |  Vl53l0X - laser-ranging module |[about](http://www.st.com/en/imaging-and-photonics-solutions/vl53l0x.html) - [buy](https://www.banggood.com/de/GY-530-VL53L0X-Laser-Ranging-Sensor-Module-IIC-Communication-Ranging-Module-p-1201341.html?p=QW0903761303201409LG) - [blog article soon]|
 |`ssd1306_i2c.py` `ssd1306.py` | SSD1306 - display drivers | [blog article soon] |
 |`ST7735.py` `sysfont.py` | ST7735 - display drivers for ESP32/ESP8266 | [blog article soon] |
+|`ili934xnew.py` `fonts/*` | ILI934 - display drivers for ESP32/M5Stack | [blog article soon] |
 
 # Licenses
 * check files
