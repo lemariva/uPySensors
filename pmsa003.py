@@ -4,14 +4,14 @@ import utime
 
 epoch_offset = 946684800
 
-class psma003:
+class PMSA003:
     def __init__(self, uart, pins):
         
         self._uart = uart
         self._pins = pins
         
-        self._set = machine.Pin(self._pins["set"], machine.Pin.OUT)
-        self._rst = machine.Pin(self._pins["rst"], machine.Pin.OUT)
+        self._set = machine.Pin(self._pins["set"], machine.Pin.OUT, value=0)
+        self._rst = machine.Pin(self._pins["rst"], machine.Pin.OUT, value=0)
         self._uart.init(tx=self._pins["tx"], rx=self._pins["rx"])
         self.power_off()
 
