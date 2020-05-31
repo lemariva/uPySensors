@@ -1,24 +1,36 @@
+"""
+Copyright 2020 LeMaRiva|Tech (Mauro Riva) info@lemariva.com
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import utime
 from machine import Pin
 
 class STEPPER:
 
-    def __init__(self, pins, speed=250):
-        self._pins = pins
-        self._In1 = Pin(self._pins["In1"], Pin.OUT)
-        self._In2 = Pin(self._pins["In2"], Pin.OUT)
-        self._In3 = Pin(self._pins["In3"], Pin.OUT)
-        self._In4 = Pin(self._pins["In4"], Pin.OUT)
-        self._delay = speed
-        self._number_of_steps = 205
+    def __init__(self, device_config):
+        self._In1 = Pin(device_config["In1"], Pin.OUT)
+        self._In2 = Pin(device_config["In2"], Pin.OUT)
+        self._In3 = Pin(device_config["In3"], Pin.OUT)
+        self._In4 = Pin(device_config["In4"], Pin.OUT)
+        self._number_of_steps = device_config["number_of_steps"] + 1
+        self._max_speed = 60 * 1000 * 1000 / self._number_of_steps / device_config["max_speed"]
         self._step_number = 0
         self._last_step_time = 0
-        self.set_speed(speed)
+        self.set_speed(device_config["max_speed"]/2)
 
     def set_speed(self, speed):
         self._step_delay = 60 * 1000 * 1000 / self._number_of_steps / speed
-        if self._step_delay < 1200:
-            self._step_delay = 1200
+        if self._step_delay < self._max_speed:
+            self._step_delay = self._max_speed
 
     def step_motor(self, step):
         if step == 0:  #1010
@@ -42,13 +54,13 @@ class STEPPER:
             self._In3.value(0)
             self._In4.value(1)
 
-    def stop(self):
+    def release(self):
         self._In1.value(0)
         self._In2.value(0)
         self._In3.value(0)
         self._In4.value(0)
 
-    def step(self, steps_to_move, speed=None, stop=True):
+    def step(self, steps_to_move, speed=None, hold=True):
         if speed is not None:
             self.set_speed(speed)
 
@@ -78,5 +90,5 @@ class STEPPER:
         if self._step_number == steps_left:
             self._step_number = 0
 
-        if steps_left == 0 and stop:
-            self.stop()
+        if steps_left == 0 and not hold:
+            self.release()
